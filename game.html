@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>词汇对拼 - 雅思英雄</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        .game-box {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            width: 420px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 血条样式 */
+        .hp-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .hp-label { font-size: 14px; color: #aaa; }
+        .hp-track {
+            width: 150px;
+            height: 16px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .hp-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s;
+        }
+        .hp-fill.player { background: linear-gradient(to right, #00c853, #64dd17); }
+        .hp-fill.enemy { background: linear-gradient(to right, #ff1744, #ff5252); }
+
+        /* 题目区 */
+        .question-area {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .question-area h3 {
+            color: #ffd200;
+            margin-bottom: 15px;
+        }
+        .sentence {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #ddd;
+        }
+
+        /* 选项按钮 */
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .opt-btn {
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .opt-btn:hover {
+            background: rgba(247, 151, 30, 0.3);
+            border-color: #f7971e;
+        }
+        .opt-btn.correct {
+            background: rgba(0, 200, 83, 0.4);
+            border-color: #00c853;
+        }
+        .opt-btn.wrong {
+            background: rgba(255, 23, 68, 0.4);
+            border-color: #ff1744;
+        }
+
+        /* 计时器 */
+        .timer {
+            text-align: center;
+            font-size: 28px;
+            color: #ffd200;
+            margin: 10px 0;
+        }
+
+        /* 得分 */
+        .score-area {
+            text-align: center;
+            margin-top: 15px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-box">
+        <!-- 血条区域 -->
+        <div class="hp-bar">
+            <div>
+                <span class="hp-label">🧑 你</span>
+                <div class="hp-track">
+                    <div class="hp-fill player" id="playerHp" style="width:100%"></div>
+                </div>
+            </div>
+            <div style="text-align:right">
+                <span class="hp-label">🤖 对手</span>
+                <div class="hp-track">
+                    <div class="hp-fill enemy" id="enemyHp" style="width:100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 计时器 -->
+        <div class="timer">⏱️ <span id="timeLeft">10</span>s</div>
+
+        <!-- 题目 -->
+        <div class="question-area">
+            <h3 id="questionTitle">第 1 题</h3>
+            <p class="sentence" id="questionText">加载中...</p>
+        </div>
+
+        <!-- 选项 -->
+        <div class="options" id="optionsBox">
+            <!-- 动态生成 -->
+        </div>
+
+        <!-- 得分 -->
+        <div class="score-area">
+            ⭐ 得分：<span id="score">0</span> 分 | 
+            🔥 连击：<span id="combo">0</span>
+        </div>
+    </div>
+    <script src="effects.js"></script>
+    <script src="rank.js"></script>
+    <script src="sound.js"></script>
+    <script>
+        // ============================================
+        //   📚 雅思词汇题库（后面会越加越多）
+        // ============================================
+        const wordBank = [
+            {
+                sentence: "The government decided to _____ new policies to address climate change.",
+                options: ["implement", "imply", "import", "improve"],
+                answer: 0,
+                translation: "政府决定实施新政策来应对气候变化。"
+            },
+            {
+                sentence: "The study aims to _____ the relationship between diet and health.",
+                options: ["investigate", "invest", "invent", "invite"],
+                answer: 0,
+                translation: "该研究旨在调查饮食与健康之间的关系。"
+            },
+            {
+                sentence: "Many students find it difficult to _____ to a new learning environment.",
+                options: ["admit", "adopt", "adapt", "adore"],
+                answer: 2,
+                translation: "许多学生发现很难适应新的学习环境。"
+            },
+            {
+                sentence: "The results of the experiment were _____ with previous findings.",
+                options: ["considerate", "consistent", "conscious", "considerable"],
+                answer: 1,
+                translation: "实验结果与之前的发现一致。"
+            },
+            {
+                sentence: "Education plays a _____ role in economic development.",
+                options: ["crucial", "crude", "cruel", "crisp"],
+                answer: 0,
+                translation: "教育在经济发展中起着至关重要的作用。"
+            },
+            {
+                sentence: "The report _____ that pollution levels have increased significantly.",
+                options: ["involves", "indicates", "includes", "inspires"],
+                answer: 1,
+                translation: "报告表明污染水平已显著上升。"
+            },
+            {
+                sentence: "It is important to _____ cultural diversity in modern society.",
+                options: ["embrace", "embarrass", "emerge", "embed"],
+                answer: 0,
+                translation: "在现代社会中拥抱文化多样性是很重要的。"
+            },
+            {
+                sentence: "The company plans to _____ its business to overseas markets.",
+                options: ["expose", "export", "expand", "expect"],
+                answer: 2,
+                translation: "公司计划将业务扩展到海外市场。"
+            },
+            {
+                sentence: "The government should _____ more resources to public education.",
+                options: ["locate", "allocate", "dislocate", "collocate"],
+                answer: 1,
+                translation: "政府应该为公共教育分配更多资源。"
+            },
+            {
+                sentence: "There is a growing _____ that technology is changing the way we live.",
+                options: ["consensus", "census", "concept", "concern"],
+                answer: 0,
+                translation: "越来越多的人达成共识：技术正在改变我们的生活方式。"
+            },
+            {
+                sentence: "The researcher _____ data from over 1,000 participants.",
+                options: ["collected", "connected", "corrected", "conducted"],
+                answer: 0,
+                translation: "研究人员从1000多名参与者中收集了数据。"
+            },
+            {
+                sentence: "Urbanization has _____ significant changes in people's lifestyles.",
+                options: ["brought about", "brought up", "brought in", "brought out"],
+                answer: 0,
+                translation: "城市化给人们的生活方式带来了重大变化。"
+            },
+            {
+                sentence: "It is widely _____ that exercise is beneficial for mental health.",
+                options: ["accomplished", "acknowledged", "accumulated", "accompanied"],
+                answer: 1,
+                translation: "人们普遍认为运动对心理健康有益。"
+            },
+            {
+                sentence: "The new policy has been _____ effective in reducing crime rates.",
+                options: ["profoundly", "previously", "predominantly", "prove"],
+                answer: 2,
+                translation: "新政策在降低犯罪率方面非常有效。"
+            },
+            {
+                sentence: "Students should develop the ability to think _____.",
+                options: ["critically", "criminally", "chronically", "credibly"],
+                answer: 0,
+                translation: "学生应该培养批判性思维能力。"
+            },
+            {
+                sentence: "The gap between rich and poor continues to _____.",
+                options: ["narrow", "widen", "deepen", "shorten"],
+                answer: 1,
+                translation: "贫富差距持续扩大。"
+            }
+            
+             
+        ];
+
+        // ============================================
+        //   🎮 游戏状态
+        // ============================================
+        let playerHP = 100;
+        let enemyHP = 100;
+        let score = 0;
+        let combo = 0;
+        let currentQuestion = 0;
+        let timeLeft = 10;
+        let timer = null;
+        let canAnswer = true;
+
+        // ============================================
+        //   🔧 游戏函数
+        // ============================================
+        // ===== 随机打乱题库 =====
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+        shuffleArray(wordBank); // 每局随机顺序
+        // 加载题目
+        function loadQuestion() {
+            if (currentQuestion >= wordBank.length) {
+                endGame();
+                return;
+            }
+
+            canAnswer = true;
+            const q = wordBank[currentQuestion];
+
+            document.getElementById('questionTitle').textContent = `第 ${currentQuestion + 1} 题`;
+            document.getElementById('questionText').textContent = q.sentence;
+
+            const optionsBox = document.getElementById('optionsBox');
+            optionsBox.innerHTML = '';
+
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = `opt-btn animated-entry-delay-${index + 1}`;
+                btn.textContent = opt;
+                btn.onclick = () => selectAnswer(index);
+                optionsBox.appendChild(btn);
+            });
+
+            // 重置计时器
+            timeLeft = 10;
+            document.getElementById('timeLeft').textContent = timeLeft;
+            clearInterval(timer);
+            timer = setInterval(countdown, 1000);
+        }
+
+        // 倒计时
+        function countdown() {
+            timeLeft--;
+            document.getElementById('timeLeft').textContent = timeLeft;
+            // 🔊 倒计时音效
+            if (timeLeft <= 3 && timeLeft > 0) {
+                Sound.urgentTick();
+            } else if (timeLeft > 3) {
+                 Sound.tick();
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                selectAnswer(-1); // 超时算错
+            }
+        }
+
+        // 选择答案
+        function selectAnswer(choice) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            clearInterval(timer);
+
+            const q = wordBank[currentQuestion];
+            const buttons = document.querySelectorAll('.opt-btn');
+
+            // 显示正确答案（绿色）
+            buttons[q.answer].classList.add('correct');
+
+            if (choice === q.answer) {
+                // ✅ 答对了！
+                Sound.correct();
+                let damage = 10 + timeLeft * 2 + combo * 3; // 速度越快伤害越高
+                enemyHP = Math.max(0, enemyHP - damage);
+                combo++;
+                score += damage;
+                // ✨ 特效！
+                flashScreen(true);
+                showDamageNumber(
+                    window.innerWidth * 0.65,
+                    120,
+                    `-${damage}`,
+                    'hit'
+                );
+                if (combo >= 3) {
+                    showComboEffect(combo);
+                    Sound.combo(combo);
+                    
+                }
+
+                // 显示反馈
+                document.getElementById('questionTitle').textContent = 
+                    `✅ 正确！伤害 ${damage} 🔥 连击x${combo}`;
+            } else {
+                // ❌ 答错了
+                Sound.wrong();
+                if (choice >= 0) buttons[choice].classList.add('wrong');
+                playerHP = Math.max(0, playerHP - 15);
+                combo = 0;
+                // ✨ 特效！
+                flashScreen(false);
+                shakeElement(document.querySelector('.game-box'));
+                showDamageNumber(
+                    window.innerWidth * 0.2,
+                    120,
+                    `-15`,
+                    'hit'
+                );
+
+                document.getElementById('questionTitle').textContent = 
+                    `❌ 错误！正确答案是 "${q.options[q.answer]}"`;
+            }
+
+            // 更新UI
+            updateUI();
+
+            // 检查是否有人血量归零
+            if (playerHP <= 0 || enemyHP <= 0) {
+                setTimeout(endGame, 1500);
+                return;
+            }
+
+            // 模拟对手答题（AI）
+            setTimeout(() => {
+                let enemyCorrect = Math.random() > 0.4; // 对手60%正确率
+                if (enemyCorrect) {
+                    playerHP = Math.max(0, playerHP - 10);
+                    updateUI();
+                }
+            }, 500);
+
+            // 1.5秒后下一题
+            currentQuestion++;
+            setTimeout(loadQuestion, 1500);
+        }
+
+        // 更新界面
+        function updateUI() {
+            document.getElementById('playerHp').style.width = playerHP + '%';
+            document.getElementById('enemyHp').style.width = enemyHP + '%';
+            document.getElementById('score').textContent = score;
+            document.getElementById('combo').textContent = combo;
+        }
+
+        // 游戏结束
+        function endGame() {
+            clearInterval(timer);
+            const won = enemyHP <= 0 || playerHP > enemyHP;
+            // ✨ 胜利/失败特效
+            if (won) {
+                Sound.victory();
+                showVictoryParticles();
+            } else {
+                Sound.defeat();
+                showDefeatEffect();
+            }
+            const box = document.querySelector('.game-box');
+            // ===== 💾 保存成绩到本地存档 =====
+            let data = JSON.parse(localStorage.getItem('ieltsHeroData') || '{}');
+            const oldRankName = data.rank || '';
+            data.score = (data.score || 0) + score;
+            data.totalGames = (data.totalGames || 0) + 1;
+            // 📜 记录战绩历史
+            let history = JSON.parse(localStorage.getItem('ieltsHeroBattleHistory') || '[]');
+            history.push({
+                date: new Date().toLocaleDateString(),
+                score: score,
+                won: won,
+                playerHP: playerHP,
+                enemyHP: enemyHP
+            });
+            // 只保留最近50条
+            if (history.length > 50) history = history.slice(-50);
+            localStorage.setItem('ieltsHeroBattleHistory', JSON.stringify(history));
+            // 每赢一局获得种子奖励
+            if (won) {
+                data.totalWins = (data.totalWins || 0) + 1;
+                data.seeds = (data.seeds || 0) + 5;
+                data.fertilizer = (data.fertilizer || 0) + 2;
+            }
+            localStorage.setItem('ieltsHeroData', JSON.stringify(data));
+            // 🏅 检查段位变化
+            const newRank = updateRank();
+            const newRankFullName = newRank.icon + " " + newRank.name;
+            // 延迟显示结算画面
+            setTimeout(() => {
+                const box = document.querySelector('.game-box');
+                box.innerHTML = `
+                <div class="animated-entry" style="text-align:center; padding:30px 0;">
+                    <h1 style="font-size:48px; margin-bottom:15px;">
+                        ${won ? '🏆 胜利！' : '💀 失败...'}
+                    </h1>
+                     <p class="animated-entry-delay-1" style="font-size:20px; color:#ffd200; margin-bottom:5px;">
+                        本局得分：${score} 分
+                    </p>
+                    <p class="animated-entry-delay-2" style="color:#aaa; margin-bottom:5px;">
+                        你的血量：${playerHP}% | 对手血量：${enemyHP}%
+                    </p>
+                    <p class="animated-entry-delay-3" style="color:#64dd17; margin-bottom:5px;">
+                        ${won ? '🌱 获得种子 x5 | 💧 获得肥料 x2' : '继续加油！'}
+                    </p>
+                     <p class="animated-entry-delay-3" style="color:${newRank.color}; margin-bottom:20px;">
+                        段位：${newRank.icon} ${newRank.name}
+                    </p>
+                    <div class="animated-entry-delay-4" style="display:grid; gap:10px;">
+                        <button class="opt-btn" onclick="location.reload()"
+                            style="padding:14px; font-size:16px; border-color:#ffd200;">
+                            🔄 再来一局
+                        </button>
+                        <button class="opt-btn" onclick="location.href='plant.html'"
+                            style="padding:14px; font-size:16px; border-color:#64dd17;">
+                            🌱 去花园看看
+                        </button>
+                        <button class="opt-btn" onclick="location.href='index.html'"
+                            style="padding:14px; font-size:16px; border-color:#aaa;">
+                            🏠 返回首页
+                        </button>
+                    </div>
+                </div>
+                `;
+                // 如果段位提升了，显示段位提升特效
+                if (oldRankName !== newRankFullName && oldRankName !== '') {
+                    setTimeout(() => showRankUpEffect(oldRankName, newRank), 1000);
+                }
+            }, 500);
+        }
+
+        // ============================================
+        //   🚀 启动游戏！
+        // ============================================
+        loadQuestion();
+    </script>
+</body>
+</html>

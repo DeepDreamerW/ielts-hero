@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的花园 - 雅思英雄</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a472a, #2d5016, #1a472a);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 { color: #64dd17; font-size: 28px; }
+
+        .resources {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #aaa;
+        }
+        .resources span { 
+            background: rgba(0,0,0,0.3);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+
+        /* 花园网格 */
+        .garden {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 400px;
+            margin: 0 auto 20px;
+        }
+
+        .plot {
+            background: rgba(0,0,0,0.3);
+            border: 2px dashed rgba(255,255,255,0.15);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .plot:hover {
+            border-color: #64dd17;
+            background: rgba(100, 221, 23, 0.1);
+        }
+        .plot.has-plant {
+            border-style: solid;
+            border-color: rgba(100, 221, 23, 0.3);
+        }
+
+        .plant-emoji { font-size: 40px; margin-bottom: 8px; }
+        .plant-name { font-size: 12px; color: #aaa; margin-bottom: 4px; }
+        .plant-stage { font-size: 11px; color: #64dd17; }
+
+        .progress-bar {
+            width: 80%;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #64dd17, #00e676);
+            border-radius: 3px;
+            transition: width 0.5s;
+        }
+
+        .empty-plot { color: rgba(255,255,255,0.3); font-size: 30px; }
+
+        /* 商店 */
+        .shop {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .shop h3 {
+            color: #ffd200;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .seed-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+        }
+        .seed-info { display: flex; align-items: center; gap: 10px; }
+        .seed-emoji { font-size: 24px; }
+        .seed-name { font-size: 14px; }
+        .seed-desc { font-size: 11px; color: #aaa; }
+        .seed-cost { color: #ffd200; font-size: 13px; }
+
+        .buy-btn {
+            background: linear-gradient(to right, #64dd17, #00c853);
+            border: none;
+            padding: 6px 16px;
+            border-radius: 15px;
+            color: #1a472a;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .buy-btn:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .action-btn {
+            display: block;
+            width: 100%;
+            max-width: 400px;
+            margin: 15px auto;
+            padding: 12px;
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .action-btn:hover { border-color: #64dd17; }
+
+        /* 弹窗 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: #2a2a2a;
+            border-radius: 15px;
+            padding: 25px;
+            width: 320px;
+            text-align: center;
+        }
+        .modal-box h3 { color: #ffd200; margin-bottom: 15px; }
+        .modal-box button { margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🌱 我的花园</h1>
+        <div class="resources">
+            <span>🌰 种子: <b id="seedCount">0</b></span>
+            <span>💧 肥料: <b id="fertCount">0</b></span>
+        </div>
+    </div>
+
+    <!-- 花园区域 -->
+    <div class="garden" id="gardenGrid">
+        <!-- 动态生成 -->
+    </div>
+
+    <!-- 种子商店 -->
+    <div class="shop">
+        <h3>🏪 种子商店</h3>
+        <div id="shopList">
+            <!-- 动态生成 -->
+        </div>
+    </div>
+
+    <button class="action-btn" onclick="location.href='game.html'">
+        ⚔️ 去对战赚种子
+    </button>
+    <button class="action-btn" onclick="location.href='index.html'">
+        🏠 返回首页
+    </button>
+
+    <!-- 植物详情弹窗 -->
+    <div class="modal-overlay" id="plantModal">
+        <div class="modal-box">
+            <div id="modalContent"></div>
+            <button class="buy-btn" onclick="closePlantModal()" style="margin-top:15px; padding:8px 30px;">
+                关闭
+            </button>
+        </div>
+    </div>
+
+    <script>
+    // ============================================
+    //   🌱 植物数据定义
+    // ============================================
+    const PLANT_TYPES = [
+        {
+            id: "vocab_flower",
+            name: "词汇之花",
+            emoji: "🌻",
+            cost: 5,
+            desc: "对战时答题时间 +2秒",
+            stages: ["🌰", "🌱", "🪴", "🌻"],
+            stageNames: ["种子", "幼苗", "成株", "开花"],
+            growthNeeded: [0, 3, 8, 15] // 每个阶段需要的浇水次数
+        },
+        {
+            id: "grammar_tree",
+            name: "语法之树",
+            emoji: "🌳",
+            cost: 8,
+            desc: "答错时减少伤害 -5",
+            stages: ["🌰", "🌱", "🌿", "🌳"],
+            stageNames: ["种子", "幼苗", "小树", "大树"],
+            growthNeeded: [0, 4, 10, 20]
+        },
+        {
+            id: "oral_grass",
+            name: "口语幸运草",
+            emoji: "🍀",
+            cost: 6,
+            desc: "对战获得积分 +20%",
+            stages: ["🌰", "🌱", "☘️", "🍀"],
+            stageNames: ["种子", "幼苗", "三叶草", "四叶草"],
+            growthNeeded: [0, 3, 7, 12]
+        },
+        {
+            id: "writing_rose",
+            name: "写作玫瑰",
+            emoji: "🌹",
+            cost: 10,
+            desc: "每日签到种子 +2",
+            stages: ["🌰", "🌱", "🥀", "🌹"],
+            stageNames: ["种子", "花苞", "含苞", "盛开"],
+            growthNeeded: [0, 5, 12, 22]
+        },
+        {
+            id: "listening_mushroom",
+            name: "听力蘑菇",
+            emoji: "🍄",
+            cost: 7,
+            desc: "答题倒计时 +3秒",
+            stages: ["🌰", "🌱", "🟤", "🍄"],
+            stageNames: ["孢子", "菌丝", "小蘑菇", "大蘑菇"],
+            growthNeeded: [0, 3, 9, 16]
+        }
+    ];
+
+    const MAX_PLOTS = 9; // 最多9块地
+
+    // ============================================
+    //   🔧 核心函数
+    // ============================================
+
+    function loadGameData() {
+        let data = localStorage.getItem('ieltsHeroData');
+        if (!data) {
+            data = {
+                name: "新手学者", rank: "倔强青铜 I", score: 0,
+                seeds: 5, fertilizer: 0, plants: [],
+                totalWins: 0, totalGames: 0, lastSignIn: "", signInDays: 0
+            };
+            localStorage.setItem('ieltsHeroData', JSON.stringify(data));
+        } else {
+            data = JSON.parse(data);
+            if (!data.plants) data.plants = [];
+            if (!data.seeds) data.seeds = 0;
+            if (!data.fertilizer) data.fertilizer = 0;
+        }
+        return data;
+    }
+
+    function saveGameData(data) {
+        localStorage.setItem('ieltsHeroData', JSON.stringify(data));
+    }
+
+    // 获取植物当前阶段
+    function getPlantStage(plant) {
+        const type = PLANT_TYPES.find(t => t.id === plant.typeId);
+        if (!type) return 0;
+        let stage = 0;
+        for (let i = type.growthNeeded.length - 1; i >= 0; i--) {
+            if (plant.growth >= type.growthNeeded[i]) {
+                stage = i;
+                break;
+            }
+        }
+        return stage;
+    }
+
+    // ============================================
+    //   🎨 渲染花园
+    // ============================================
+    function renderGarden() {
+        const data = loadGameData();
+
+        // 更新资源显示
+        document.getElementById('seedCount').textContent = data.seeds;
+        document.getElementById('fertCount').textContent = data.fertilizer;
+
+        // 渲染花园格子
+        const grid = document.getElementById('gardenGrid');
+        grid.innerHTML = '';
+
+        for (let i = 0; i < MAX_PLOTS; i++) {
+            const plot = document.createElement('div');
+            plot.className = 'plot';
+
+            if (i < data.plants.length) {
+                // 有植物
+                const plant = data.plants[i];
+                const type = PLANT_TYPES.find(t => t.id === plant.typeId);
+                const stage = getPlantStage(plant);
+                const maxGrowth = type.growthNeeded[type.growthNeeded.length - 1];
+                const progress = Math.min(100, Math.round((plant.growth / maxGrowth) * 100));
+
+                plot.classList.add('has-plant');
+                plot.innerHTML = `
+                    <div class="plant-emoji">${type.stages[stage]}</div>
+                    <div class="plant-name">${type.name}</div>
+                    <div class="plant-stage">${type.stageNames[stage]}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:${progress}%"></div>
+                    </div>
+                `;
+                plot.onclick = () => showPlantDetail(i);
+            } else {
+                // 空地
+                plot.innerHTML = `<div class="empty-plot">+</div>
+                                  <div class="plant-name" style="color:rgba(255,255,255,0.2)">空地</div>`;
+            }
+
+            grid.appendChild(plot);
+        }
+
+        // 渲染商店
+        renderShop(data);
+    }
+
+    // ============================================
+    //   🏪 商店
+    // ============================================
+    function renderShop(data) {
+        const shopList = document.getElementById('shopList');
+        shopList.innerHTML = '';
+
+        PLANT_TYPES.forEach(type => {
+            const canBuy = data.seeds >= type.cost && data.plants.length < MAX_PLOTS;
+            const item = document.createElement('div');
+            item.className = 'seed-item';
+            item.innerHTML = `
+                <div class="seed-info">
+                    <span class="seed-emoji">${type.emoji}</span>
+                    <div>
+                        <div class="seed-name">${type.name}</div>
+                        <div class="seed-desc">${type.desc}</div>
+                    </div>
+                </div>
+                <div style="text-align:right">
+                    <div class="seed-cost">🌰 ${type.cost}</div>
+                    <button class="buy-btn" onclick="buyPlant('${type.id}')"
+                        ${canBuy ? '' : 'disabled'}>
+                        种植
+                    </button>
+                </div>
+            `;
+            shopList.appendChild(item);
+        });
+    }
+
+    // 购买种植
+    function buyPlant(typeId) {
+        let data = loadGameData();
+        const type = PLANT_TYPES.find(t => t.id === typeId);
+
+        if (data.seeds < type.cost) {
+            alert('种子不够！去对战赚更多种子吧 ⚔️');
+            return;
+        }
+        if (data.plants.length >= MAX_PLOTS) {
+            alert('花园已满！');
+            return;
+        }
+
+        data.seeds -= type.cost;
+        data.plants.push({
+            typeId: typeId,
+            growth: 0,
+            plantedAt: new Date().toISOString()
+        });
+
+        saveGameData(data);
+        renderGarden();
+    }
+
+    // ============================================
+    //   🌿 植物详情 + 浇水
+    // ============================================
+    function showPlantDetail(index) {
+        const data = loadGameData();
+        const plant = data.plants[index];
+        const type = PLANT_TYPES.find(t => t.id === plant.typeId);
+        const stage = getPlantStage(plant);
+        const maxGrowth = type.growthNeeded[type.growthNeeded.length - 1];
+        const isMaxed = plant.growth >= maxGrowth;
+
+        document.getElementById('modalContent').innerHTML = `
+            <div style="font-size:60px; margin-bottom:10px;">${type.stages[stage]}</div>
+            <h3 style="color:#64dd17;">${type.name}</h3>
+            <p style="color:#aaa; font-size:13px; margin-bottom:10px;">
+                阶段：${type.stageNames[stage]} | 成长值：${plant.growth}/${maxGrowth}
+            </p>
+            <p style="color:#ffd200; font-size:12px; margin-bottom:15px;">
+                效果：${type.desc}
+            </p>
+            ${isMaxed 
+                ? '<p style="color:#64dd17;">🎉 已经完全长大啦！</p>' 
+                : `<button class="buy-btn" onclick="waterPlant(${index})" 
+                     ${data.fertilizer > 0 ? '' : 'disabled'}
+                     style="padding:8px 25px;">
+                     💧 浇水施肥（消耗肥料x1）
+                   </button>
+                   <p style="color:#aaa; font-size:11px; margin-top:8px;">
+                     当前肥料：${data.fertilizer}
+                   </p>`
+            }
+        `;
+
+        document.getElementById('plantModal').classList.add('active');
+    }
+
+    function closePlantModal() {
+        document.getElementById('plantModal').classList.remove('active');
+    }
+
+    // 浇水施肥
+    function waterPlant(index) {
+        let data = loadGameData();
+        if (data.fertilizer <= 0) {
+            alert('肥料不够了！通过对战和签到获得更多肥料~');
+            return;
+        }
+
+        data.fertilizer -= 1;
+        data.plants[index].growth += 1;
+
+        saveGameData(data);
+        renderGarden();
+        showPlantDetail(index); // 刷新弹窗
+    }
+
+    // ============================================
+    //   🚀 启动
+    // ============================================
+    renderGarden();
+    </script>
+</body>
+</html>

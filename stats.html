@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>战绩统计 - 雅思英雄</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .page-title {
+            text-align: center;
+            font-size: 26px;
+            color: #ffd200;
+            margin-bottom: 25px;
+        }
+
+        .stats-container {
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        /* 段位大卡片 */
+        .rank-card {
+            background: rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.5s;
+        }
+        .rank-emoji { font-size: 64px; display: block; margin-bottom: 10px; }
+        .rank-name { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+        .rank-score { color: #aaa; font-size: 14px; }
+
+        /* 进度条 */
+        .rank-progress {
+            margin-top: 15px;
+        }
+        .rank-progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+        .rank-progress-bar {
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .rank-progress-fill {
+            height: 100%;
+            border-radius: 5px;
+            background: linear-gradient(to right, #f7971e, #ffd200);
+            transition: width 1s ease-out;
+        }
+
+        /* 数据网格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.06);
+            border-radius: 15px;
+            padding: 18px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        /* 词汇掌握度 */
+        .vocab-section {
+            background: rgba(255,255,255,0.06);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .vocab-section h3 {
+            color: #ffd200;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .vocab-bar-item {
+            margin-bottom: 12px;
+        }
+        .vocab-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .vocab-bar-track {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .vocab-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease-out;
+        }
+
+        /* 最近战绩 */
+        .history-section {
+            background: rgba(255,255,255,0.06);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .history-section h3 {
+            color: #ffd200;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 14px;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .win-tag {
+            background: rgba(0,200,83,0.2);
+            color: #00c853;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        .lose-tag {
+            background: rgba(255,23,68,0.2);
+            color: #ff1744;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .back-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 12px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .back-btn:hover { border-color: #ffd200; }
+    </style>
+</head>
+<body>
+
+    <h1 class="page-title">📊 战绩统计</h1>
+
+    <div class="stats-container">
+        <!-- 段位卡片 -->
+        <div class="rank-card" id="rankCard">
+            <!-- 动态生成 -->
+        </div>
+
+        <!-- 核心数据 -->
+        <div class="stats-grid" id="statsGrid">
+            <!-- 动态生成 -->
+        </div>
+
+        <!-- 词汇掌握度 -->
+        <div class="vocab-section animated-entry-delay-2">
+            <h3>📚 学习能力分析</h3>
+            <div id="vocabBars">
+                <!-- 动态生成 -->
+            </div>
+        </div>
+
+        <!-- 最近战绩 -->
+        <div class="history-section animated-entry-delay-3">
+            <h3>📜 最近对战记录</h3>
+            <div id="historyList">
+                <!-- 动态生成 -->
+            </div>
+        </div>
+
+        <button class="back-btn" onclick="location.href='index.html'">🏠 返回首页</button>
+    </div>
+
+    <script src="rank.js"></script>
+    <script>
+    // ===== 加载数据 =====
+    function loadStats() {
+        let data = JSON.parse(localStorage.getItem('ieltsHeroData') || '{}');
+        const score = data.score || 0;
+        const totalGames = data.totalGames || 0;
+        const totalWins = data.totalWins || 0;
+        const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
+        const rank = getRank(score);
+        const nextInfo = getNextRankInfo(score);
+
+        // === 段位卡片 ===
+        const rankCard = document.getElementById('rankCard');
+        let progressHTML = '';
+        if (nextInfo.nextRank) {
+            const currentMin = rank.minScore;
+            const nextMin = nextInfo.nextRank.minScore;
+            const progress = Math.round(((score - currentMin) / (nextMin - currentMin)) * 100);
+            progressHTML = `
+                <div class="rank-progress">
+                    <div class="rank-progress-label">
+                        <span>${rank.name}</span>
+                        <span>${nextInfo.nextRank.name}</span>
+                    </div>
+                    <div class="rank-progress-bar">
+                        <div class="rank-progress-fill" style="width:0%" id="rankProgressFill" data-target="${progress}"></div>
+                    </div>
+                    <p style="color:#ffd200; font-size:12px; margin-top:8px;">
+                        还需 ${nextInfo.pointsNeeded} 分升段
+                    </p>
+                </div>
+            `;
+        } else {
+            progressHTML = '<p style="color:#ffd200; margin-top:10px;">🎉 已达最高段位！</p>';
+        }
+
+        rankCard.innerHTML = `
+            <span class="rank-emoji">${rank.icon}</span>
+            <div class="rank-name" style="color:${rank.color}">${rank.name}</div>
+            <div class="rank-score">总积分：${score}</div>
+            ${progressHTML}
+        `;
+
+        // === 核心数据 ===
+        const statsGrid = document.getElementById('statsGrid');
+        const statsData = [
+            { value: totalGames, label: '总场次', color: '#ffd200' },
+            { value: totalWins, label: '胜利场次', color: '#00c853' },
+            { value: winRate + '%', label: '胜率', color: winRate >= 50 ? '#00c853' : '#ff1744' },
+            { value: data.signInDays || 0, label: '连续签到', color: '#e040fb' },
+            { value: (data.plants || []).length, label: '植物数量', color: '#64dd17' },
+            { value: data.seeds || 0, label: '种子余额', color: '#ffd200' },
+        ];
+
+        statsGrid.innerHTML = statsData.map((s, i) => `
+            <div class="stat-card animated-entry-delay-${(i % 4) + 1}">
+                <div class="stat-value" style="color:${s.color}">${s.value}</div>
+                <div class="stat-label">${s.label}</div>
+            </div>
+        `).join('');
+
+        // === 学习能力分析 ===
+        const vocabBars = document.getElementById('vocabBars');
+        const abilities = [
+            { name: '词汇量', value: Math.min(100, Math.round(score / 100)), color: '#ffd200' },
+            { name: '反应速度', value: Math.min(100, 30 + totalGames * 3), color: '#f7971e' },
+            { name: '准确率', value: winRate, color: '#00c853' },
+            { name: '坚持度', value: Math.min(100, (data.signInDays || 0) * 14), color: '#e040fb' },
+        ];
+
+        vocabBars.innerHTML = abilities.map(a => `
+            <div class="vocab-bar-item">
+                <div class="vocab-bar-label">
+                    <span>${a.name}</span>
+                    <span style="color:${a.color}">${a.value}%</span>
+                </div>
+                <div class="vocab-bar-track">
+                    <div class="vocab-bar-fill" 
+                         style="width:0%; background:${a.color};" 
+                         data-target="${a.value}"></div>
+                </div>
+            </div>
+        `).join('');
+
+        // === 战绩记录 ===
+        const historyList = document.getElementById('historyList');
+        let history = JSON.parse(localStorage.getItem('ieltsHeroBattleHistory') || '[]');
+        
+        if (history.length === 0) {
+            historyList.innerHTML = '<p style="color:#aaa; text-align:center; font-size:14px;">暂无战绩，快去对战吧！⚔️</p>';
+        } else {
+            historyList.innerHTML = history.slice(-10).reverse().map(h => `
+                <div class="history-item">
+                    <span style="color:#aaa; font-size:12px;">${h.date}</span>
+                    <span>得分 ${h.score}</span>
+                    <span class="${h.won ? 'win-tag' : 'lose-tag'}">
+                        ${h.won ? '✅ 胜利' : '❌ 失败'}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        // === 进度条动画 ===
+        setTimeout(() => {
+            document.querySelectorAll('[data-target]').forEach(el => {
+                el.style.width = el.dataset.target + '%';
+            });
+        }, 300);
+    }
+
+    loadStats();
+    </script>
+</body>
+</html>

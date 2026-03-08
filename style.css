@@ -1,0 +1,313 @@
+/* ============================================
+   ✨ 雅思英雄 - 全局动画与特效
+   ============================================ */
+
+/* ===== 页面进入动画 ===== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slideInLeft {
+    from { transform: translateX(-50px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(50px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* ===== 持续动画 ===== */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(255, 210, 0, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(255, 210, 0, 0.6); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+}
+
+@keyframes rainbow {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+/* ===== 伤害数字飘字 ===== */
+@keyframes damageFloat {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-40px) scale(1.3);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-80px) scale(0.8);
+    }
+}
+
+.damage-number {
+    position: fixed;
+    font-size: 28px;
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 999;
+    animation: damageFloat 1s ease-out forwards;
+}
+
+.damage-number.hit {
+    color: #ff1744;
+    text-shadow: 0 0 10px rgba(255, 23, 68, 0.5);
+}
+
+.damage-number.heal {
+    color: #00e676;
+    text-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
+}
+
+.damage-number.combo {
+    color: #ffd200;
+    text-shadow: 0 0 15px rgba(255, 210, 0, 0.7);
+    font-size: 36px;
+}
+
+/* ===== 正确/错误 闪屏 ===== */
+.flash-correct {
+    animation: flashGreen 0.5s;
+}
+
+@keyframes flashGreen {
+    0% { background-color: rgba(0, 200, 83, 0); }
+    30% { background-color: rgba(0, 200, 83, 0.15); }
+    100% { background-color: rgba(0, 200, 83, 0); }
+}
+
+.flash-wrong {
+    animation: flashRed 0.5s;
+}
+
+@keyframes flashRed {
+    0% { background-color: rgba(255, 23, 68, 0); }
+    30% { background-color: rgba(255, 23, 68, 0.15); }
+    100% { background-color: rgba(255, 23, 68, 0); }
+}
+
+/* ===== 粒子效果容器 ===== */
+.particles-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 998;
+    overflow: hidden;
+}
+
+@keyframes particleFall {
+    0% { 
+        transform: translateY(-10px) rotate(0deg); 
+        opacity: 1; 
+    }
+    100% { 
+        transform: translateY(100vh) rotate(720deg); 
+        opacity: 0; 
+    }
+}
+
+/* ===== 连击火焰特效 ===== */
+.combo-fire {
+    position: relative;
+}
+
+.combo-fire::after {
+    content: '🔥';
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    font-size: 20px;
+    animation: float 1s infinite;
+}
+
+/* ===== 段位升级特效 ===== */
+.rank-up-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.5s;
+}
+
+.rank-up-content {
+    text-align: center;
+    animation: scaleIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.rank-up-content h1 {
+    font-size: 42px;
+    color: #ffd200;
+    margin-bottom: 10px;
+    animation: pulse 1s infinite;
+}
+
+.rank-up-content .rank-icon {
+    font-size: 80px;
+    display: block;
+    margin: 20px 0;
+    animation: float 2s infinite;
+}
+
+/* ===== 通用过渡 ===== */
+.animated-entry {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.animated-entry-delay-1 { animation: fadeInUp 0.5s ease-out 0.1s both; }
+.animated-entry-delay-2 { animation: fadeInUp 0.5s ease-out 0.2s both; }
+.animated-entry-delay-3 { animation: fadeInUp 0.5s ease-out 0.3s both; }
+.animated-entry-delay-4 { animation: fadeInUp 0.5s ease-out 0.4s both; }
+
+/* ============================================
+   📱 手机端适配
+   ============================================ */
+
+/* 防止手机双击缩放 */
+* {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 小屏幕适配 */
+@media screen and (max-width: 480px) {
+    body {
+        padding: 10px !important;
+    }
+
+    h1 {
+        font-size: 26px !important;
+    }
+
+    .game-box {
+        width: 100% !important;
+        padding: 20px 15px !important;
+        border-radius: 15px !important;
+    }
+
+    .options {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+
+    .opt-btn {
+        padding: 14px !important;
+        font-size: 17px !important;
+        /* 让手指更容易点击 */
+        min-height: 50px;
+    }
+
+    .timer {
+        font-size: 22px !important;
+    }
+
+    .garden {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    .plot {
+        min-height: 110px !important;
+        padding: 10px !important;
+    }
+
+    .plant-emoji {
+        font-size: 30px !important;
+    }
+
+    .stat-value {
+        font-size: 24px !important;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+
+    .start-btn {
+        padding: 14px 30px !important;
+        font-size: 16px !important;
+    }
+
+    .seed-item {
+        padding: 10px !important;
+    }
+
+    .hp-track {
+        width: 120px !important;
+    }
+
+    .sentence {
+        font-size: 15px !important;
+    }
+}
+
+/* 超小屏幕（iPhone SE等） */
+@media screen and (max-width: 350px) {
+    .garden {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .hp-track {
+        width: 90px !important;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+/* 安全区域（刘海屏） */
+@supports (padding: env(safe-area-inset-top)) {
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+}

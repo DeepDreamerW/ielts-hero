@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- 添加手机端优化 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#302b63">
+    <title>雅思英雄·词境花园</title>
+    <style>
+        /* ===== 基础样式 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .game-container {
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #f7971e, #ffd200);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 40px;
+        }
+
+        .start-btn {
+            background: linear-gradient(to right, #f7971e, #ffd200);
+            border: none;
+            padding: 15px 60px;
+            font-size: 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            color: #333;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+            .start-btn:hover {
+                transform: scale(1.1);
+            }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+    <h1>⚔️ 雅思英雄 ⚔️</h1>
+    <p class="subtitle">词境花园 · IELTS HERO</p>
+    <br>
+
+    <!-- 玩家信息卡 -->
+    <div id="playerCard" style="
+        background: rgba(255,255,255,0.1);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(10px);
+    ">
+        <p style="font-size:14px; color:#aaa;">欢迎回来</p>
+        <h2 id="playerName" style="color:#ffd200; margin:5px 0;">新手学者</h2>
+        <p style="color:#aaa;">
+            🏅 段位：<span id="playerRank" style="color:#cd7f32;">倔强青铜 I</span>
+        </p>
+        <p style="color:#aaa;">
+            ⭐ 积分：<span id="playerScore" style="color:#ffd200;">0</span> | 
+            🌱 植物：<span id="plantCount" style="color:#64dd17;">0</span> 棵
+        </p>
+    </div>
+    <button onclick="toggleSound(); this.textContent = soundEnabled ? '🔊' : '🔇';"
+        style="position:fixed; top:15px; right:15px; background:none; border:1px solid rgba(255,255,255,0.2);
+        color:white; width:40px; height:40px; border-radius:50%; cursor:pointer; font-size:18px;">
+        🔊
+    </button>
+    <!-- 模式选择 -->
+    <div style="display: grid; gap: 12px; max-width: 300px; margin: 0 auto;">
+        <button class="start-btn" onclick="location.href='game.html'" style="width:100%; font-size:16px; padding:14px;">
+            ⚔️ 词汇对拼
+        </button>
+        <button class="start-btn" onclick="location.href='plant.html'" style="width:100%; font-size:16px; padding:14px; background:linear-gradient(to right, #00c853, #64dd17);">
+            🌱 我的花园
+        </button>
+        <button class="start-btn" onclick="alert('🚧 排位赛即将开放！')" style="width:100%; font-size:16px; padding:14px; background:linear-gradient(to right, #aa00ff, #e040fb);">
+            🏆 排位赛（即将开放）
+        </button>
+        <button class="start-btn" onclick="location.href='stats.html'" style="width:100%; font-size:16px; padding:14px; background:linear-gradient(to right, #536dfe, #2979ff);">
+            📊 战绩统计
+        </button>
+    </div>
+
+    <!-- 每日签到 -->
+    <div style="margin-top:25px;">
+        <button onclick="dailySignIn()" style="
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #ffd200;
+            padding: 10px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+        ">
+            📅 每日签到（领种子）
+        </button>
+        <p id="signInMsg" style="color:#aaa; font-size:12px; margin-top:8px;"></p>
+    </div>
+</div>
+<script src="rank.js"></script>
+<script>
+// ===== 读取本地存档 =====
+function loadGameData() {
+    let data = localStorage.getItem('ieltsHeroData');
+    if (!data) {
+        // 首次游玩，创建初始数据
+        data = {
+            name: "新手学者",
+            rank: "倔强青铜 I",
+            score: 0,
+            seeds: 5,         // 种子数量
+            fertilizer: 0,    // 肥料
+            plants: [],        // 植物列表
+            totalWins: 0,
+            totalGames: 0,
+            combo: 0,
+            lastSignIn: "",    // 上次签到日期
+            signInDays: 0      // 连续签到天数
+        };
+        localStorage.setItem('ieltsHeroData', JSON.stringify(data));
+    } else {
+        data = JSON.parse(data);
+    }
+    return data;
+}
+
+// ===== 保存数据 =====
+function saveGameData(data) {
+    localStorage.setItem('ieltsHeroData', JSON.stringify(data));
+}
+
+// ===== 更新首页显示 =====
+function updateHomeUI() {
+    const data = loadGameData();
+    const rank = getRank(data.score || 0);
+    const nextInfo = getNextRankInfo(data.score || 0);
+    document.getElementById('playerName').textContent = data.name;
+    document.getElementById('playerRank').textContent = data.rank;
+    document.getElementById('playerScore').textContent = data.score;
+    document.getElementById('plantCount').textContent = data.plants.length;
+    document.getElementById('playerName').textContent = data.name;
+    document.getElementById('playerRank').textContent = rank.icon + " " + rank.name;
+    document.getElementById('playerRank').style.color = rank.color;
+    document.getElementById('playerScore').textContent = data.score;
+    document.getElementById('plantCount').textContent = data.plants.length;
+     // 段位进度条（如果还没到最高段位）
+    if (nextInfo.nextRank) {
+        document.getElementById('signInMsg').textContent = 
+            `距离 ${nextInfo.nextRank.name} 还需 ${nextInfo.pointsNeeded} 分`;
+    }
+}
+
+// ===== 每日签到 =====
+function dailySignIn() {
+    let data = loadGameData();
+    const today = new Date().toDateString();
+
+    if (data.lastSignIn === today) {
+        document.getElementById('signInMsg').textContent = "✅ 今天已经签到过了哦~";
+        return;
+    }
+
+    // 判断是否连续签到
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    if (data.lastSignIn === yesterday) {
+        data.signInDays += 1;
+    } else {
+        data.signInDays = 1;
+    }
+
+    // 发放奖励
+    let seedReward = 3 + data.signInDays; // 连续签到越多，种子越多
+    data.seeds += seedReward;
+    data.lastSignIn = today;
+
+    // 连续7天额外奖励
+    let bonusMsg = "";
+    if (data.signInDays % 7 === 0) {
+        data.fertilizer += 3;
+        bonusMsg = " | 🎁 连续7天奖励：肥料x3！";
+    }
+
+    saveGameData(data);
+    updateHomeUI();
+
+    document.getElementById('signInMsg').textContent = 
+        `🎉 签到成功！连续${data.signInDays}天 | 获得种子x${seedReward}${bonusMsg}`;
+}
+
+// 页面加载时更新UI
+updateHomeUI();
+</script>
+</body>
+</html>

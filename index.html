@@ -104,6 +104,13 @@
         <button class="start-btn" onclick="location.href='stats.html'" style="width:100%; font-size:16px; padding:14px; background:linear-gradient(to right, #536dfe, #2979ff);">
             📊 战绩统计
         </button>
+        <button class="start-btn" onclick="location.href='listening.html'" style="width:100%; font-size:16px; padding:14px; background:linear-gradient(to right, #536dfe, #2979ff);">
+            🎧 听力模式
+        </button>
+        <button onclick="location.href='profile.html'"style="position:fixed; top:15px; left:15px; background:none; border:1px solid rgba(255,255,255,0.2);
+        color:white; width:40px; height:40px; border-radius:50%; cursor:pointer; font-size:18px;">
+            👤
+        </button>
     </div>
 
     <!-- 每日签到 -->
@@ -123,6 +130,7 @@
     </div>
 </div>
 <script src="rank.js"></script>
+<script src="achievements.js"></script>
 <script>
 // ===== 读取本地存档 =====
 function loadGameData() {
@@ -159,15 +167,18 @@ function updateHomeUI() {
     const data = loadGameData();
     const rank = getRank(data.score || 0);
     const nextInfo = getNextRankInfo(data.score || 0);
+    
     document.getElementById('playerName').textContent = data.name;
     document.getElementById('playerRank').textContent = data.rank;
     document.getElementById('playerScore').textContent = data.score;
     document.getElementById('plantCount').textContent = data.plants.length;
-    document.getElementById('playerName').textContent = data.name;
+    // 显示头像+昵称
+    document.getElementById('playerName').textContent = 
+        (data.avatar || '🧑‍🎓') + ' ' + (data.name || '新手学者');
     document.getElementById('playerRank').textContent = rank.icon + " " + rank.name;
     document.getElementById('playerRank').style.color = rank.color;
-    document.getElementById('playerScore').textContent = data.score;
-    document.getElementById('plantCount').textContent = data.plants.length;
+    document.getElementById('playerScore').textContent = data.score || 0;
+    document.getElementById('plantCount').textContent = (data.plants || []).length;
      // 段位进度条（如果还没到最高段位）
     if (nextInfo.nextRank) {
         document.getElementById('signInMsg').textContent = 
@@ -214,6 +225,7 @@ function dailySignIn() {
 
 // 页面加载时更新UI
 updateHomeUI();
+checkAndShowAchievements();
 </script>
 </body>
 </html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>个人设置 - 雅思英雄</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+        .page-title { text-align: center; font-size: 26px; color: #ffd200; margin-bottom: 25px; }
+        .profile-container { max-width: 400px; margin: 0 auto; }
+
+        .section {
+            background: rgba(255,255,255,0.08);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .section h3 { color: #ffd200; font-size: 16px; margin-bottom: 15px; }
+
+        /* 头像选择 */
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        .avatar-option {
+            width: 100%;
+            aspect-ratio: 1;
+            font-size: 32px;
+            border: 3px solid transparent;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.05);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .avatar-option:hover { border-color: rgba(255,210,0,0.5); transform: scale(1.1); }
+        .avatar-option.selected {
+            border-color: #ffd200;
+            background: rgba(255,210,0,0.15);
+            box-shadow: 0 0 10px rgba(255,210,0,0.3);
+        }
+
+        /* 昵称输入 */
+        .name-input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .name-input:focus { border-color: #ffd200; }
+        .name-input::placeholder { color: rgba(255,255,255,0.3); }
+
+        .char-count { text-align: right; font-size: 12px; color: #aaa; margin-top: 5px; }
+
+        /* 称号 */
+        .title-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .title-option {
+            padding: 10px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .title-option:hover { border-color: rgba(255,210,0,0.5); }
+        .title-option.selected { border-color: #ffd200; background: rgba(255,210,0,0.1); }
+        .title-option.locked { opacity: 0.4; cursor: not-allowed; }
+
+        .save-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(to right, #f7971e, #ffd200);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .back-btn {
+            width: 100%;
+            padding: 14px;
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        /* 预览 */
+        .preview-card {
+            text-align: center;
+            padding: 20px;
+        }
+        .preview-avatar { font-size: 60px; margin-bottom: 10px; }
+        .preview-name { font-size: 22px; font-weight: bold; color: #ffd200; }
+        .preview-title { font-size: 13px; color: #aaa; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1 class="page-title">👤 个人设置</h1>
+
+    <div class="profile-container">
+        <!-- 预览卡片 -->
+        <div class="section preview-card animated-entry">
+            <div class="preview-avatar" id="previewAvatar">🧑‍🎓</div>
+            <div class="preview-name" id="previewName">新手学者</div>
+            <div class="preview-title" id="previewTitle">雅思小白</div>
+        </div>
+
+        <!-- 头像选择 -->
+        <div class="section animated-entry-delay-1">
+            <h3>🎭 选择头像</h3>
+            <div class="avatar-grid" id="avatarGrid"></div>
+        </div>
+
+        <!-- 昵称 -->
+        <div class="section animated-entry-delay-2">
+            <h3>✏️ 修改昵称</h3>
+            <input type="text" class="name-input" id="nameInput" 
+                   maxlength="12" placeholder="输入你的昵称（最多12字）"
+                   oninput="onNameInput()">
+            <div class="char-count"><span id="charCount">0</span>/12</div>
+        </div>
+
+        <!-- 称号选择 -->
+        <div class="section animated-entry-delay-3">
+            <h3>🏷️ 选择称号</h3>
+            <div class="title-grid" id="titleGrid"></div>
+        </div>
+
+        <!-- 保存按钮 -->
+        <button class="save-btn animated-entry-delay-4" onclick="saveProfile()">
+            💾 保存设置
+        </button>
+        <button class="back-btn" onclick="location.href='index.html'">🏠 返回首页</button>
+    </div>
+
+    <script src="rank.js"></script>
+    <script src="sound.js"></script>
+    <script>
+    // ===== 头像列表 =====
+    const AVATARS = [
+        '🧑‍🎓', '👨‍💻', '👩‍💻', '🧑‍🏫', '👨‍🎓',
+        '🦊', '🐱', '🐼', '🦁', '🐨',
+        '🌟', '⚡', '🔥', '🌈', '💎',
+        '🎯', '🚀', '🎮', '📚', '🏆'
+    ];
+
+    // ===== 称号列表 =====
+    const TITLES = [
+        { text: "雅思小白", minScore: 0 },
+        { text: "单词猎手", minScore: 100 },
+        { text: "词汇达人", minScore: 500 },
+        { text: "语法战士", minScore: 1000 },
+        { text: "阅读能手", minScore: 2000 },
+        { text: "听力达人", minScore: 3000 },
+        { text: "雅思先锋", minScore: 5000 },
+        { text: "学霸本霸", minScore: 8000 },
+        { text: "英语大神", minScore: 12000 },
+        { text: "雅思传奇", minScore: 18000 },
+    ];
+
+    let selectedAvatar = '🧑‍🎓';
+    let selectedTitle = '雅思小白';
+
+    // ===== 加载数据 =====
+    function loadProfile() {
+        const data = JSON.parse(localStorage.getItem('ieltsHeroData') || '{}');
+        const score = data.score || 0;
+
+        // 头像
+        selectedAvatar = data.avatar || '🧑‍🎓';
+        const avatarGrid = document.getElementById('avatarGrid');
+        avatarGrid.innerHTML = '';
+        AVATARS.forEach(emoji => {
+            const el = document.createElement('div');
+            el.className = `avatar-option ${emoji === selectedAvatar ? 'selected' : ''}`;
+            el.textContent = emoji;
+            el.onclick = () => selectAvatar(emoji);
+            avatarGrid.appendChild(el);
+        });
+
+        // 昵称
+        document.getElementById('nameInput').value = data.name || '新手学者';
+        document.getElementById('charCount').textContent = (data.name || '').length;
+
+        // 称号
+        selectedTitle = data.title || '雅思小白';
+        const titleGrid = document.getElementById('titleGrid');
+        titleGrid.innerHTML = '';
+        TITLES.forEach(t => {
+            const unlocked = score >= t.minScore;
+            const el = document.createElement('div');
+            el.className = `title-option ${t.text === selectedTitle ? 'selected' : ''} ${unlocked ? '' : 'locked'}`;
+            el.innerHTML = `${unlocked ? '' : '🔒 '}${t.text}
+                <div style="font-size:11px; color:#888; margin-top:3px;">
+                    ${unlocked ? '✅ 已解锁' : `需要 ${t.minScore} 分`}
+                </div>`;
+            if (unlocked) {
+                el.onclick = () => selectTitle(t.text);
+            }
+            titleGrid.appendChild(el);
+        });
+
+        updatePreview();
+    }
+
+    function selectAvatar(emoji) {
+        selectedAvatar = emoji;
+        document.querySelectorAll('.avatar-option').forEach(el => {
+            el.classList.toggle('selected', el.textContent === emoji);
+        });
+        Sound.click();
+        updatePreview();
+    }
+
+    function selectTitle(title) {
+        selectedTitle = title;
+        document.querySelectorAll('.title-option').forEach(el => {
+            el.classList.toggle('selected', el.textContent.includes(title) && !el.classList.contains('locked'));
+        });
+        Sound.click();
+        updatePreview();
+    }
+
+    function onNameInput() {
+        const input = document.getElementById('nameInput');
+        document.getElementById('charCount').textContent = input.value.length;
+        updatePreview();
+    }
+
+    function updatePreview() {
+        document.getElementById('previewAvatar').textContent = selectedAvatar;
+        document.getElementById('previewName').textContent = 
+            document.getElementById('nameInput').value || '新手学者';
+        document.getElementById('previewTitle').textContent = selectedTitle;
+    }
+
+    function saveProfile() {
+        let data = JSON.parse(localStorage.getItem('ieltsHeroData') || '{}');
+        data.avatar = selectedAvatar;
+        data.name = document.getElementById('nameInput').value.trim() || '新手学者';
+        data.title = selectedTitle;
+        localStorage.setItem('ieltsHeroData', JSON.stringify(data));
+
+        Sound.signIn();
+        alert('✅ 保存成功！');
+        location.href = 'index.html';
+    }
+
+    loadProfile();
+    </script>
+</body>
+</html>

@@ -112,6 +112,13 @@
     <div class="game-box">
         <!-- 血条区域 -->
         <div class="hp-bar">
+            <div id="buffBar" style="
+                text-align: center;
+                font-size: 12px;
+                color: #64dd17;
+                margin-bottom: 10px;
+                min-height: 16px;
+            "></div>
             <div>
                 <span class="hp-label">🧑 你</span>
                 <div class="hp-track">
@@ -146,117 +153,23 @@
             🔥 连击：<span id="combo">0</span>
         </div>
     </div>
+    <script src="wordbank.js"></script>  // 题库数据
     <script src="effects.js"></script>
     <script src="rank.js"></script>
     <script src="sound.js"></script>
+    <script src="ai.js"></script>
+    <script src="buff.js"></script>
     <script>
-        // ============================================
-        //   📚 雅思词汇题库（后面会越加越多）
-        // ============================================
-        const wordBank = [
-            {
-                sentence: "The government decided to _____ new policies to address climate change.",
-                options: ["implement", "imply", "import", "improve"],
-                answer: 0,
-                translation: "政府决定实施新政策来应对气候变化。"
-            },
-            {
-                sentence: "The study aims to _____ the relationship between diet and health.",
-                options: ["investigate", "invest", "invent", "invite"],
-                answer: 0,
-                translation: "该研究旨在调查饮食与健康之间的关系。"
-            },
-            {
-                sentence: "Many students find it difficult to _____ to a new learning environment.",
-                options: ["admit", "adopt", "adapt", "adore"],
-                answer: 2,
-                translation: "许多学生发现很难适应新的学习环境。"
-            },
-            {
-                sentence: "The results of the experiment were _____ with previous findings.",
-                options: ["considerate", "consistent", "conscious", "considerable"],
-                answer: 1,
-                translation: "实验结果与之前的发现一致。"
-            },
-            {
-                sentence: "Education plays a _____ role in economic development.",
-                options: ["crucial", "crude", "cruel", "crisp"],
-                answer: 0,
-                translation: "教育在经济发展中起着至关重要的作用。"
-            },
-            {
-                sentence: "The report _____ that pollution levels have increased significantly.",
-                options: ["involves", "indicates", "includes", "inspires"],
-                answer: 1,
-                translation: "报告表明污染水平已显著上升。"
-            },
-            {
-                sentence: "It is important to _____ cultural diversity in modern society.",
-                options: ["embrace", "embarrass", "emerge", "embed"],
-                answer: 0,
-                translation: "在现代社会中拥抱文化多样性是很重要的。"
-            },
-            {
-                sentence: "The company plans to _____ its business to overseas markets.",
-                options: ["expose", "export", "expand", "expect"],
-                answer: 2,
-                translation: "公司计划将业务扩展到海外市场。"
-            },
-            {
-                sentence: "The government should _____ more resources to public education.",
-                options: ["locate", "allocate", "dislocate", "collocate"],
-                answer: 1,
-                translation: "政府应该为公共教育分配更多资源。"
-            },
-            {
-                sentence: "There is a growing _____ that technology is changing the way we live.",
-                options: ["consensus", "census", "concept", "concern"],
-                answer: 0,
-                translation: "越来越多的人达成共识：技术正在改变我们的生活方式。"
-            },
-            {
-                sentence: "The researcher _____ data from over 1,000 participants.",
-                options: ["collected", "connected", "corrected", "conducted"],
-                answer: 0,
-                translation: "研究人员从1000多名参与者中收集了数据。"
-            },
-            {
-                sentence: "Urbanization has _____ significant changes in people's lifestyles.",
-                options: ["brought about", "brought up", "brought in", "brought out"],
-                answer: 0,
-                translation: "城市化给人们的生活方式带来了重大变化。"
-            },
-            {
-                sentence: "It is widely _____ that exercise is beneficial for mental health.",
-                options: ["accomplished", "acknowledged", "accumulated", "accompanied"],
-                answer: 1,
-                translation: "人们普遍认为运动对心理健康有益。"
-            },
-            {
-                sentence: "The new policy has been _____ effective in reducing crime rates.",
-                options: ["profoundly", "previously", "predominantly", "prove"],
-                answer: 2,
-                translation: "新政策在降低犯罪率方面非常有效。"
-            },
-            {
-                sentence: "Students should develop the ability to think _____.",
-                options: ["critically", "criminally", "chronically", "credibly"],
-                answer: 0,
-                translation: "学生应该培养批判性思维能力。"
-            },
-            {
-                sentence: "The gap between rich and poor continues to _____.",
-                options: ["narrow", "widen", "deepen", "shorten"],
-                answer: 1,
-                translation: "贫富差距持续扩大。"
-            }
-            
-             
-        ];
-
+        // ===== 根据玩家段位加载匹配难度的题目 =====
+        const playerData = JSON.parse(localStorage.getItem('ieltsHeroData') || '{}');
+        const playerScore = playerData.score || 0;
+        const wordBank = getMatchedQuestions(playerScore, 10);
+        const diffRange = getDifficultyForScore(playerScore);
         // ============================================
         //   🎮 游戏状态
         // ============================================
+        // ===== AI对手 =====
+        const aiOpponent = getAIOpponent(playerScore);
         let playerHP = 100;
         let enemyHP = 100;
         let score = 0;
@@ -265,21 +178,37 @@
         let timeLeft = 10;
         let timer = null;
         let canAnswer = true;
+        <div style="text-align:right">
+            <span class="hp-label" id="enemyName">🤖 对手</span>
+            <div class="hp-track">
+                <div class="hp-fill enemy" id="enemyHp" style="width:100%"></div>
+            </div>
+        </div>
+        // ===== 计算植物BUFF =====
+        const activeBuffs = calculateTotalBuffs();
+        const BASE_TIME = 10; // 基础答题时间
+        const TOTAL_TIME = BASE_TIME + activeBuffs.extraTime; // 加上BUFF时间
 
         // ============================================
         //   🔧 游戏函数
         // ============================================
         // ===== 随机打乱题库 =====
-        function shuffleArray(arr) {
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
-        }
-        shuffleArray(wordBank); // 每局随机顺序
+        
         // 加载题目
         function loadQuestion() {
+            if (currentQuestion === 0) {
+                // 显示BUFF信息
+                const buffDescs = getBuffDescription(activeBuffs);
+                if (buffDescs.length > 0) {
+                    document.getElementById('buffBar').textContent = 
+                    '🌱 植物加成：' + buffDescs.join(' | ');
+                }
+            }
+            // 显示AI对手信息（第一题时）
+            if (currentQuestion === 0) {
+                document.getElementById('enemyName').textContent = 
+                `${aiOpponent.emoji} ${aiOpponent.name}`;
+            }
             if (currentQuestion >= wordBank.length) {
                 endGame();
                 return;
@@ -290,6 +219,8 @@
 
             document.getElementById('questionTitle').textContent = `第 ${currentQuestion + 1} 题`;
             document.getElementById('questionText').textContent = q.sentence;
+            document.getElementById('questionTitle').textContent = 
+             `第 ${currentQuestion + 1}/${wordBank.length} 题 ${getDifficultyStars(q.difficulty)}`;
 
             const optionsBox = document.getElementById('optionsBox');
             optionsBox.innerHTML = '';
@@ -303,7 +234,7 @@
             });
 
             // 重置计时器
-            timeLeft = 10;
+            timeLeft = TOTAL_TIME;
             document.getElementById('timeLeft').textContent = timeLeft;
             clearInterval(timer);
             timer = setInterval(countdown, 1000);
@@ -342,6 +273,8 @@
                 // ✅ 答对了！
                 Sound.correct();
                 let damage = 10 + timeLeft * 2 + combo * 3; // 速度越快伤害越高
+                // 🌱 应用植物BUFF：得分加成
+                damage = Math.round(damage * (1 + activeBuffs.scoreBonus));
                 enemyHP = Math.max(0, enemyHP - damage);
                 combo++;
                 score += damage;
@@ -365,6 +298,9 @@
             } else {
                 // ❌ 答错了
                 Sound.wrong();
+                // 答错时
+                const damageReceived = Math.max(5, 15 - activeBuffs.reduceDamage);
+                playerHP = Math.max(0, playerHP - damageReceived);
                 if (choice >= 0) buttons[choice].classList.add('wrong');
                 playerHP = Math.max(0, playerHP - 15);
                 combo = 0;
@@ -377,9 +313,9 @@
                     `-15`,
                     'hit'
                 );
-
-                document.getElementById('questionTitle').textContent = 
-                    `❌ 错误！正确答案是 "${q.options[q.answer]}"`;
+                // 答错时显示 tip
+                document.getElementById('questionTitle').textContent =
+                `❌ ${q.options[q.answer]} → ${q.tip}`;
             }
 
             // 更新UI
@@ -392,11 +328,26 @@
             }
 
             // 模拟对手答题（AI）
+            // 🤖 AI对手答题
             setTimeout(() => {
-                let enemyCorrect = Math.random() > 0.4; // 对手60%正确率
-                if (enemyCorrect) {
-                    playerHP = Math.max(0, playerHP - 10);
+                const aiResult = aiAnswer(aiOpponent);
+                if (aiResult.correct) {
+                    // AI答对了，计算AI的伤害
+                    let aiDamage = 8 + Math.round((10 - aiResult.time) * 2);
+                    playerHP = Math.max(0, playerHP - aiDamage);
+
+                    // 显示AI伤害飘字
+                    showDamageNumber(
+                        window.innerWidth * 0.2,
+                        80,
+                        `-${aiDamage}`,
+                        'hit'
+                    );
                     updateUI();
+
+                    if (playerHP <= 0) {
+                        setTimeout(endGame, 1000);
+                    }
                 }
             }, 500);
 
@@ -494,12 +445,15 @@
                     setTimeout(() => showRankUpEffect(oldRankName, newRank), 1000);
                 }
             }, 500);
+            setTimeout(() => checkAndShowAchievements(), 2000);
         }
+        
 
         // ============================================
         //   🚀 启动游戏！
         // ============================================
-        loadQuestion();
+        loadQuestion(); 
     </script>
+    <script src="achievements.js"></script>
 </body>
 </html>

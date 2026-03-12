@@ -126,7 +126,7 @@
                 </div>
             </div>
             <div style="text-align:right">
-                <span class="hp-label">🤖 对手</span>
+                <span class="hp-label" id="enemyName">🤖 对手</span>
                 <div class="hp-track">
                     <div class="hp-fill enemy" id="enemyHp" style="width:100%"></div>
                 </div>
@@ -159,6 +159,7 @@
     <script src="sound.js"></script>
     <script src="ai.js"></script>
     <script src="buff.js"></script>
+    <script src="tutorial.js"></script>
     <script>
         // ===== 根据玩家段位加载匹配难度的题目 =====
         const playerData = JSON.parse(localStorage.getItem('ieltsHeroData') || '{}');
@@ -178,12 +179,6 @@
         let timeLeft = 10;
         let timer = null;
         let canAnswer = true;
-        <div style="text-align:right">
-            <span class="hp-label" id="enemyName">🤖 对手</span>
-            <div class="hp-track">
-                <div class="hp-fill enemy" id="enemyHp" style="width:100%"></div>
-            </div>
-        </div>
         // ===== 计算植物BUFF =====
         const activeBuffs = calculateTotalBuffs();
         const BASE_TIME = 10; // 基础答题时间
@@ -196,6 +191,20 @@
         
         // 加载题目
         function loadQuestion() {
+            if (currentQuestion === 0) {
+                showTutorial('battle', () => {
+                // 引导结束后开始计时
+                timeLeft = TOTAL_TIME;
+                document.getElementById('timeLeft').textContent = timeLeft;
+                clearInterval(timer);
+                timer = setInterval(countdown, 1000);
+            });
+            // 如果是第一次玩，先不启动计时器
+                const viewedKey = 'ieltsHero_tutorial_battle';
+                if (localStorage.getItem(viewedKey) !== 'done') {
+                    return; // 等引导结束再加载
+                }
+            }
             if (currentQuestion === 0) {
                 // 显示BUFF信息
                 const buffDescs = getBuffDescription(activeBuffs);
@@ -302,7 +311,7 @@
                 const damageReceived = Math.max(5, 15 - activeBuffs.reduceDamage);
                 playerHP = Math.max(0, playerHP - damageReceived);
                 if (choice >= 0) buttons[choice].classList.add('wrong');
-                playerHP = Math.max(0, playerHP - 15);
+
                 combo = 0;
                 // ✨ 特效！
                 flashScreen(false);
@@ -446,6 +455,7 @@
                 }
             }, 500);
             setTimeout(() => checkAndShowAchievements(), 2000);
+            syncMyScore(); // 同步到在线排行榜
         }
         
 
@@ -455,5 +465,6 @@
         loadQuestion(); 
     </script>
     <script src="achievements.js"></script>
+    <script src="leaderboard.js"></script>
 </body>
 </html>

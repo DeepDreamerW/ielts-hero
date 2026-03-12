@@ -111,6 +111,12 @@
         color:white; width:40px; height:40px; border-radius:50%; cursor:pointer; font-size:18px;">
             👤
         </button>
+        <button class="start-btn" onclick="location.href='challenge.html'"style="width:100%; font-size:16px; padding:14px; background:linear-gradient(to right, #ff6e40, #ff1744);">
+            🎯 每日挑战（今日限定）
+        </button>
+        <button class="start-btn" onclick="location.href='leaderboard.html'"style="width:100%; font-size:16px; padding:14px; background:linear-gradient(to right, #ffd200, #ff6d00);">
+            🏆 全服排行榜
+        </button>
     </div>
 
     <!-- 每日签到 -->
@@ -129,8 +135,48 @@
         <p id="signInMsg" style="color:#aaa; font-size:12px; margin-top:8px;"></p>
     </div>
 </div>
+<div style="text-align:center; margin-top:20px;">
+    <button onclick="shareGame()" style="
+        background: none; border: 1px solid rgba(255,255,255,0.2);
+        color: #ffd200; padding: 10px 25px; border-radius: 25px;
+        cursor: pointer; font-size: 14px;">
+        📤 分享给朋友
+    </button>
+</div>
+
+<script>
+function shareGame() {
+    const data = loadGameData();
+    const rank = getRank(data.score || 0);
+    const shareText = `🎮 我在「雅思英雄」已经达到${rank.icon}${rank.name}！累计积分${data.score || 0}分！\n快来挑战我吧 👉 ${window.location.origin}${window.location.pathname.replace('index.html', '')}splash.html`;
+
+    // 尝试使用原生分享
+    if (navigator.share) {
+        navigator.share({
+            title: '雅思英雄 · 词境花园',
+            text: shareText,
+            url: window.location.href
+        }).catch(() => {});
+    } else {
+        // 复制到剪贴板
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('✅ 分享内容已复制到剪贴板！\n去微信/QQ粘贴发送给朋友吧~');
+        }).catch(() => {
+            // 兜底方案
+            const input = document.createElement('textarea');
+            input.value = shareText;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            alert('✅ 分享内容已复制到剪贴板！');
+        });
+    }
+}
+</script>
 <script src="rank.js"></script>
 <script src="achievements.js"></script>
+<script src="tutorial.js"></script>
 <script>
 // ===== 读取本地存档 =====
 function loadGameData() {
@@ -225,6 +271,8 @@ function dailySignIn() {
 
 // 页面加载时更新UI
 updateHomeUI();
+// 首次进入显示引导
+showTutorial('home');
 checkAndShowAchievements();
 </script>
 </body>

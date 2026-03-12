@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f0c29">
+    <title>雅思英雄 · 词境花园</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .splash {
+            text-align: center;
+            animation: fadeIn 1s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+        .logo { font-size: 72px; margin-bottom: 15px; animation: float 3s infinite ease-in-out; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        .title {
+            font-size: 32px; font-weight: bold;
+            background: linear-gradient(to right, #f7971e, #ffd200);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .subtitle { color: #aaa; font-size: 14px; margin-bottom: 40px; letter-spacing: 3px; }
+
+        .loading-bar {
+            width: 200px; height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            margin: 0 auto 15px;
+            overflow: hidden;
+        }
+        .loading-fill {
+            width: 0%; height: 100%;
+            background: linear-gradient(to right, #f7971e, #ffd200);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+        .loading-text { color: #666; font-size: 12px; }
+
+        .version { position: fixed; bottom: 20px; color: #444; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div class="splash">
+        <div class="logo">⚔️</div>
+        <div class="title">雅思英雄</div>
+        <div class="subtitle">词境花园 · IELTS HERO</div>
+        <div class="loading-bar">
+            <div class="loading-fill" id="loadingBar"></div>
+        </div>
+        <div class="loading-text" id="loadingText">正在加载...</div>
+    </div>
+    <div class="version">v1.0.0</div>
+
+    <script>
+    const messages = [
+        '正在加载词汇库...',
+        '正在召唤AI对手...',
+        '正在浇灌植物...',
+        '正在准备战斗...',
+        '即将进入游戏...'
+    ];
+
+    let progress = 0;
+    const bar = document.getElementById('loadingBar');
+    const text = document.getElementById('loadingText');
+
+    const loadInterval = setInterval(() => {
+        progress += Math.random() * 25 + 5;
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(loadInterval);
+            text.textContent = '加载完成！';
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 500);
+        }
+        bar.style.width = progress + '%';
+        text.textContent = messages[Math.min(Math.floor(progress / 25), messages.length - 1)];
+    }, 400);
+    </script>
+</body>
+</html>

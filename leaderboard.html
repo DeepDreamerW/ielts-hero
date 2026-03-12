@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>排行榜 - 雅思英雄</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+        .page-title { text-align: center; color: #ffd200; font-size: 26px; margin-bottom: 20px; }
+
+        .lb-container { max-width: 420px; margin: 0 auto; }
+
+        /* 前3名特殊样式 */
+        .top3 {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .top3-item {
+            text-align: center;
+            padding: 15px 10px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.06);
+            flex: 1;
+        }
+        .top3-item.first {
+            order: 2;
+            transform: scale(1.1);
+            background: rgba(255,210,0,0.1);
+            border: 1px solid rgba(255,210,0,0.3);
+        }
+        .top3-item.second { order: 1; }
+        .top3-item.third { order: 3; }
+        .top3-rank { font-size: 24px; }
+        .top3-avatar { font-size: 36px; margin: 5px 0; }
+        .top3-name { font-size: 13px; color: #eee; margin-bottom: 3px; }
+        .top3-score { font-size: 14px; color: #ffd200; font-weight: bold; }
+
+        /* 列表 */
+        .lb-list { margin-bottom: 20px; }
+        .lb-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 10px;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .lb-item.me {
+            background: rgba(255,210,0,0.1);
+            border: 1px solid rgba(255,210,0,0.3);
+        }
+        .lb-pos { width: 30px; color: #aaa; font-weight: bold; }
+        .lb-avatar { font-size: 24px; margin-right: 10px; }
+        .lb-info { flex: 1; }
+        .lb-name { color: white; }
+        .lb-rank { font-size: 11px; color: #aaa; }
+        .lb-score { color: #ffd200; font-weight: bold; }
+
+        .loading { text-align: center; color: #aaa; padding: 40px; }
+
+        .back-btn {
+            display: block; width: 100%; padding: 14px;
+            background: none; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px; color: white; font-size: 15px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="page-title">🏆 全服排行榜</h1>
+
+    <div class="lb-container">
+        <div class="top3" id="top3Box" style="display:none;"></div>
+        <div class="lb-list" id="lbList">
+            <div class="loading">⏳ 加载排行榜中...</div>
+        </div>
+        <button class="back-btn" onclick="location.href='index.html'">🏠 返回首页</button>
+    </div>
+
+    <script src="rank.js"></script>
+    <script src="leaderboard.js"></script>
+    <script>
+    async function loadLeaderboardPage() {
+        // 先同步自己的分数
+        await syncMyScore();
+
+        // 获取排行榜
+        const leaderboard = await getLeaderboard();
+        const myData = JSON.parse(localStorage.getItem('ieltsHeroData') || '{}');
+        const myName = myData.name || '匿名学者';
+
+        const lbList = document.getElementById('lbList');
+        const top3Box = document.getElementById('top3Box');
+
+        if (leaderboard.length === 0) {
+            lbList.innerHTML = `
+                <div class="loading">
+                    <p>🏜️ 还没有人上榜</p>
+                    <p style="font-size:13px; margin-top:10px;">去对战赚积分，成为第一个上榜的人！</p>
+                </div>`;
+            return;
+        }
+
+        // 前3名
+        if (leaderboard.length >= 3) {
+            top3Box.style.display = 'flex';
+            const medals = ['🥇', '🥈', '🥉'];
+            const classes = ['first', 'second', 'third'];
+            top3Box.innerHTML = leaderboard.slice(0, 3).map((p, i) => `
+                <div class="top3-item ${classes[i]} animated-entry-delay-${i + 1}">
+                    <div class="top3-rank">${medals[i]}</div>
+                    <div class="top3-avatar">${p.avatar}</div>
+                    <div class="top3-name">${p.name}</div>
+                    <div class="top3-score">${p.score}</div>
+                </div>
+            `).join('');
+        }
+
+        // 完整列表
+        lbList.innerHTML = leaderboard.map((p, i) => {
+            const isMe = p.name === myName;
+            return `
+                <div class="lb-item ${isMe ? 'me' : ''} animated-entry-delay-${Math.min(i + 1, 4)}">
+                    <span class="lb-pos">${i + 1}</span>
+                    <span class="lb-avatar">${p.avatar}</span>
+                    <div class="lb-info">
+                        <div class="lb-name">${p.name} ${isMe ? '(你)' : ''}</div>
+                        <div class="lb-rank">${p.rank || ''}</div>
+                    </div>
+                    <span class="lb-score">${p.score}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    loadLeaderboardPage();
+    </script>
+</body>
+</html>

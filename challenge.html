@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>每日挑战 - 雅思英雄</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #b71c1c, #880e4f, #4a148c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        .game-box {
+            background: rgba(0,0,0,0.4);
+            border-radius: 20px;
+            padding: 25px;
+            width: 420px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .challenge-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .challenge-header h2 { color: #ffd200; font-size: 22px; }
+        .challenge-header p { color: #aaa; font-size: 13px; margin-top: 5px; }
+
+        .challenge-rule {
+            background: rgba(255,210,0,0.1);
+            border: 1px solid rgba(255,210,0,0.3);
+            border-radius: 12px;
+            padding: 12px 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #ffd200;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+        }
+        .stat-item { text-align: center; }
+        .stat-num { font-size: 26px; font-weight: bold; color: #ffd200; }
+        .stat-lbl { font-size: 11px; color: #aaa; }
+
+        .timer { text-align: center; font-size: 24px; color: #ff6e40; margin: 8px 0; }
+
+        .sentence {
+            text-align: center;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #eee;
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+
+        .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .opt-btn {
+            padding: 14px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: white; border-radius: 10px;
+            font-size: 16px; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .opt-btn:hover { background: rgba(255,210,0,0.2); border-color: #ffd200; }
+        .opt-btn.correct { background: rgba(0,200,83,0.4); border-color: #00c853; }
+        .opt-btn.wrong { background: rgba(255,23,68,0.4); border-color: #ff1744; }
+
+        @media screen and (max-width: 480px) {
+            .game-box { width: 100%; padding: 20px 15px; }
+            .options { grid-template-columns: 1fr; }
+            .opt-btn { min-height: 50px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-box">
+        <div class="challenge-header">
+            <h2>🎯 每日挑战</h2>
+            <p id="challengeDate">2024年1月1日</p>
+        </div>
+
+        <!-- 今日规则 -->
+        <div class="challenge-rule" id="ruleBox">
+            加载中...
+        </div>
+
+        <!-- 统计 -->
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-num" id="correctCount">0</div>
+                <div class="stat-lbl">答对</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="wrongCount">0</div>
+                <div class="stat-lbl">答错</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="streakCount">0</div>
+                <div class="stat-lbl">最高连击</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="totalScore">0</div>
+                <div class="stat-lbl">得分</div>
+            </div>
+        </div>
+
+        <div class="timer">⏱️ <span id="timeLeft">0</span>s</div>
+
+        <!-- 题目 -->
+        <div class="sentence" id="questionText">加载中...</div>
+
+        <!-- 选项 -->
+        <div class="options" id="optionsBox"></div>
+    </div>
+
+    <script src="wordbank.js"></script>
+    <script src="rank.js"></script>
+    <script src="effects.js"></script>
+    <script src="sound.js"></script>
+    <script src="achievements.js"></script>
+    <script>
+    // ============================================
+    //   🎯 每日挑战 - 每天不同规则
+    // ============================================
+
+    // 用日期生成"伪随机"种子，同一天所有人看到一样的挑战
+    function getDaySeed() {
+        const today = new Date();
+        return today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    }
+
+    // 每日挑战规则（7种，一周轮换）
+    const CHALLENGE_RULES = [
+        {
+            name: "⚡ 极速模式",
+            desc: "每题只有5秒！考验你的反应速度！",
+            timePerQuestion: 5,
+            questionCount: 15,
+            scoreMultiplier: 2,
+            lives: 3
+        },
+        {
+            name: "❤️ 一命通关",
+            desc: "只有1条命！答错一次直接结束！",
+            timePerQuestion: 15,
+            questionCount: 20,
+            scoreMultiplier: 3,
+            lives: 1
+        },
+        {
+            name: "🔥 连击大师",
+            desc: "连击越高分数越高！断连击就结束！",
+            timePerQuestion: 10,
+            questionCount: 20,
+            scoreMultiplier: 1,
+            lives: 999, // 不限命
+            endOnComboBreak: true
+        },
+        {
+            name: "📚 词汇马拉松",
+            desc: "尽可能多地答题！30题超长挑战！",
+            timePerQuestion: 8,
+            questionCount: 30,
+            scoreMultiplier: 1.5,
+            lives: 5
+        },
+        {
+            name: "⭐ 高难挑战",
+            desc: "全部是钻石+难度的题目！",
+            timePerQuestion: 12,
+            questionCount: 10,
+            scoreMultiplier: 3,
+            lives: 3,
+            forceDifficulty: { min: 4, max: 5 }
+        },
+        {
+            name: "⏰ 倒计时总挑战",
+            desc: "总时间只有90秒！能答多少答多少！",
+            timePerQuestion: 999, // 不单独计时
+            totalTime: 90,
+            questionCount: 50,
+            scoreMultiplier: 2,
+            lives: 999,
+            useTotalTime: true
+        },
+        {
+            name: "🎲 随机难度",
+            desc: "每道题难度随机！什么都可能出现！",
+            timePerQuestion: 10,
+            questionCount: 15,
+            scoreMultiplier: 2,
+            lives: 3,
+            forceDifficulty: { min: 1, max: 5 }
+        }
+    ];
+
+    // ============================================
+    //   🎮 游戏状态
+    // ============================================
+    const daySeed = getDaySeed();
+    const todayRule = CHALLENGE_RULES[daySeed % CHALLENGE_RULES.length];
+    const today = new Date();
+
+    let correctCount = 0;
+    let wrongCount = 0;
+    let currentCombo = 0;
+    let maxCombo = 0;
+    let totalScore = 0;
+    let livesLeft = todayRule.lives;
+    let currentQuestion = 0;
+    let timeLeft = todayRule.useTotalTime ? todayRule.totalTime : todayRule.timePerQuestion;
+    let timer = null;
+    let canAnswer = true;
+
+    // 检查今天是否已经玩过
+    function checkAlreadyPlayed() {
+        const lastPlay = localStorage.getItem('ieltsHero_challengeDate');
+        return lastPlay === today.toDateString();
+    }
+
+    // 获取题目
+    let questions;
+    if (todayRule.forceDifficulty) {
+        questions = getQuestionsByDifficulty(todayRule.forceDifficulty.min, todayRule.forceDifficulty.max);
+    } else {
+        const playerData = JSON.parse(localStorage.getItem('ieltsHeroData') || '{}');
+        questions = getMatchedQuestions(playerData.score || 0, 50);
+    }
+
+    // 用日期种子打乱（同一天顺序相同）
+    function seededShuffle(arr, seed) {
+        let s = seed;
+        const random = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+    questions = seededShuffle([...questions], daySeed).slice(0, todayRule.questionCount);
+
+    // ============================================
+    //   🎮 游戏逻辑
+    // ============================================
+
+    function initChallenge() {
+        // 显示日期和规则
+        document.getElementById('challengeDate').textContent =
+            `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+        document.getElementById('ruleBox').innerHTML =
+            `${todayRule.name}<br><span style="font-size:12px; color:#ccc;">${todayRule.desc}</span>` +
+            (todayRule.lives < 100 ? `<br><span style="font-size:12px;">❤️ 生命值：${livesLeft}</span>` : '');
+
+        // 检查是否已经玩过
+        if (checkAlreadyPlayed()) {
+            showAlreadyPlayed();
+            return;
+        }
+
+        loadQuestion();
+    }
+
+    function showAlreadyPlayed() {
+        const best = JSON.parse(localStorage.getItem('ieltsHero_challengeBest') || '{}');
+        const box = document.querySelector('.game-box');
+        box.innerHTML = `
+            <div style="text-align:center; padding:30px 0;">
+                <h2 style="color:#ffd200;">🎯 今日挑战已完成！</h2>
+                <p style="color:#aaa; margin:15px 0;">明天再来挑战新的规则吧~</p>
+                <div style="background:rgba(255,255,255,0.05); border-radius:12px; padding:15px; margin:15px 0;">
+                    <p style="color:#ffd200; font-size:24px; font-weight:bold;">${best.score || 0} 分</p>
+                    <p style="color:#aaa; font-size:13px; margin-top:5px;">
+                        答对 ${best.correct || 0} | 答错 ${best.wrong || 0} | 最高连击 ${best.maxCombo || 0}
+                    </p>
+                </div>
+                <button onclick="location.href='index.html'" style="
+                    padding:12px 30px; background:linear-gradient(to right,#f7971e,#ffd200);
+                    border:none; border-radius:12px; font-size:15px;
+                    cursor:pointer; color:#333; font-weight:bold;
+                ">🏠 返回首页</button>
+            </div>
+        `;
+    }
+
+    function loadQuestion() {
+        if (currentQuestion >= questions.length) {
+            endChallenge();
+            return;
+        }
+
+        canAnswer = true;
+        const q = questions[currentQuestion];
+
+        document.getElementById('questionText').innerHTML =
+            `<span style="color:#aaa; font-size:12px;">第 ${currentQuestion + 1}/${questions.length} 题 ${getDifficultyStars(q.difficulty)}</span><br><br>${q.sentence}`;
+
+        const optionsBox = document.getElementById('optionsBox');
+        optionsBox.innerHTML = '';
+        q.options.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = `opt-btn animated-entry-delay-${index + 1}`;
+            btn.textContent = opt;
+            btn.onclick = () => selectAnswer(index);
+            optionsBox.appendChild(btn);
+        });
+
+        // 计时（非总时间模式才重置）
+        if (!todayRule.useTotalTime) {
+            timeLeft = todayRule.timePerQuestion;
+            clearInterval(timer);
+        }
+        if (!timer) {
+            timer = setInterval(countdown, 1000);
+        }
+        document.getElementById('timeLeft').textContent = timeLeft;
+    }
+
+    function countdown() {
+        timeLeft--;
+        document.getElementById('timeLeft').textContent = timeLeft;
+        if (timeLeft <= 3 && timeLeft > 0) Sound.urgentTick();
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            timer = null;
+            if (todayRule.useTotalTime) {
+                endChallenge();
+            } else {
+                handleWrong();
+                currentQuestion++;
+                if (livesLeft > 0) {
+                    setTimeout(loadQuestion, 1500);
+                }
+            }
+        }
+    }
+
+    function selectAnswer(choice) {
+        if (!canAnswer) return;
+        canAnswer = false;
+        if (!todayRule.useTotalTime) clearInterval(timer);
+        timer = null;
+
+        const q = questions[currentQuestion];
+        const buttons = document.querySelectorAll('.opt-btn');
+        buttons[q.answer].classList.add('correct');
+
+        if (choice === q.answer) {
+            handleCorrect();
+        } else {
+            buttons[choice].classList.add('wrong');
+            handleWrong();
+        }
+
+        updateUI();
+
+        currentQuestion++;
+        if (livesLeft <= 0) {
+            setTimeout(endChallenge, 1500);
+        } else {
+            setTimeout(loadQuestion, 1500);
+        }
+    }
+
+    function handleCorrect() {
+        Sound.correct();
+        flashScreen(true);
+        correctCount++;
+        currentCombo++;
+        if (currentCombo > maxCombo) maxCombo = currentCombo;
+
+        let points = 10 * todayRule.scoreMultiplier + currentCombo * 5;
+        totalScore += Math.round(points);
+
+        if (currentCombo >= 3) {
+            showComboEffect(currentCombo);
+            Sound.combo(currentCombo);
+        }
+    }
+
+    function handleWrong() {
+        Sound.wrong();
+        flashScreen(false);
+        wrongCount++;
+
+        // 连击模式：断连击直接结束
+        if (todayRule.endOnComboBreak && currentCombo > 0) {
+            livesLeft = 0;
+            return;
+        }
+
+        currentCombo = 0;
+        livesLeft--;
+
+        if (livesLeft > 0 && livesLeft < 100) {
+            document.getElementById('ruleBox').innerHTML =
+                `${todayRule.name} | <span style="color:#ff1744;">❤️ 剩余生命：${livesLeft}</span>`;
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('correctCount').textContent = correctCount;
+        document.getElementById('wrongCount').textContent = wrongCount;
+        document.getElementById('streakCount').textContent = maxCombo;
+        document.getElementById('totalScore').textContent = totalScore;
+    }
+
+    function endChallenge() {
+        clearInterval(timer);
+
+        // 保存记录
+        localStorage.setItem('ieltsHero_challengeDate', today.toDateString());
+        localStorage.setItem('ieltsHero_challengeBest', JSON.stringify({
+            score: totalScore, correct: correctCount,
+            wrong: wrongCount, maxCombo: maxCombo
+        }));
+
+        // 给奖励
+        let data = JSON.parse(localStorage.getItem('ieltsHeroData') || '{}');
+        const reward = Math.round(totalScore * 0.5);
+        data.score = (data.score || 0) + reward;
+        data.seeds = (data.seeds || 0) + Math.max(3, Math.round(correctCount * 0.5));
+        if (correctCount >= 10) data.fertilizer = (data.fertilizer || 0) + 2;
+        localStorage.setItem('ieltsHeroData', JSON.stringify(data));
+        updateRank();
+
+        // 显示结算
+        const box = document.querySelector('.game-box');
+        const grade = correctCount >= questions.length * 0.8 ? 'S' :
+                      correctCount >= questions.length * 0.6 ? 'A' :
+                      correctCount >= questions.length * 0.4 ? 'B' : 'C';
+        const gradeColor = { S: '#ffd200', A: '#00c853', B: '#2979ff', C: '#aaa' };
+
+        if (grade === 'S') showVictoryParticles();
+        Sound.victory();
+
+        box.innerHTML = `
+            <div class="animated-entry" style="text-align:center; padding:20px 0;">
+                <h2 style="color:#ffd200; margin-bottom:5px;">🎯 挑战完成！</h2>
+                <p style="color:#aaa; font-size:13px;">${todayRule.name}</p>
+
+                <div style="font-size:72px; margin:15px 0; color:${gradeColor[grade]}; font-weight:bold;
+                    text-shadow: 0 0 30px ${gradeColor[grade]};">
+                    ${grade}
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:15px 0;">
+                    <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px;">
+                        <div style="color:#ffd200; font-size:22px; font-weight:bold;">${totalScore}</div>
+                        <div style="color:#aaa; font-size:11px;">总分</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px;">
+                        <div style="color:#00c853; font-size:22px; font-weight:bold;">${correctCount}/${correctCount + wrongCount}</div>
+                        <div style="color:#aaa; font-size:11px;">正确率</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px;">
+                        <div style="color:#ff6e40; font-size:22px; font-weight:bold;">${maxCombo}</div>
+                        <div style="color:#aaa; font-size:11px;">最高连击</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px;">
+                        <div style="color:#64dd17; font-size:22px; font-weight:bold;">+${reward}</div>
+                        <div style="color:#aaa; font-size:11px;">获得积分</div>
+                    </div>
+                </div>
+
+                <p style="color:#64dd17; font-size:13px; margin-bottom:15px;">
+                    🌰 种子 +${Math.max(3, Math.round(correctCount * 0.5))}
+                    ${correctCount >= 10 ? '| 💧 肥料 +2' : ''}
+                </p>
+
+                <p style="color:#aaa; font-size:12px; margin-bottom:15px;">明天再来挑战新规则！</p>
+
+                <div style="display:grid; gap:8px;">
+                    <button onclick="location.href='game.html'" style="
+                        padding:12px; background:linear-gradient(to right,#f7971e,#ffd200);
+                        border:none; border-radius:10px; font-size:14px;
+                        cursor:pointer; color:#333; font-weight:bold;
+                    ">⚔️ 去词汇对拼</button>
+                    <button onclick="location.href='index.html'" style="
+                        padding:12px; background:none; border:1px solid rgba(255,255,255,0.2);
+                        border-radius:10px; font-size:14px; cursor:pointer; color:white;
+                    ">🏠 返回首页</button>
+                </div>
+            </div>
+        `;
+
+        setTimeout(() => checkAndShowAchievements(), 2000);
+    }
+
+    // 🚀 启动！
+    initChallenge();
+    </script>
+</body>
+</html>
